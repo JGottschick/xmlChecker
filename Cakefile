@@ -4,6 +4,7 @@
 # author: Jan Gottschick
 #
 
+fs = require 'fs'
 spawn = require('child_process').spawn
 gaze = require 'gaze'
 glob = require 'glob'
@@ -22,7 +23,7 @@ task 'build:js', 'copying javascript files', ->
   copyToLib 'src/**/*.+(js|map)', 'javascript'
 
 task 'build:pegjs', 'compiling pegjs files', ->
-  buildPegCoffee 'src/**/*.pegjs'
+  buildPegJs 'src/**/*.pegjs'
 
 task 'build:pegcoffee', 'compiling pegcoffee files', ->
   buildPegCoffee 'src/**/*.pegcoffee'
@@ -36,14 +37,19 @@ removeDir = (path) ->
   spawn 'rm', ['-rf', path], {stdio: "inherit"}
   console.log "Removed directory " + path + "/**/*"
 
-copyToLib = (files, name) ->
+copyToLib = (files) ->
   sources = glob.sync(files)
   for source in sources
     do (source) ->
       if not source.match(/^[\w\/]+Test.\w+$/)
         target = source.replace(/^src\//, 'lib/')
         copyFile source, target
-        console.log "Copied " + name + " " + source
+        console.log "Copied " + source
+
+copyFile = (source, target) ->
+  targetDir = target.split('/')[...-1].join('/')
+  mkdirp.sync targetDir
+  fs.writeFileSync target, fs.readFileSync(source)
 
 ###########################################
 #
@@ -64,17 +70,18 @@ buildPegJs = (sources, cb) ->
       target = source.replace(/src\//, 'lib/').replace(/.pegjs$/, '.js')
       targetModule = source.replace(/src\//, 'lib/').replace(/.pegjs$/, 'Module.js')
       targetDir = target.split('/')[...-1].join('/')
-      targetVar = target.split('/')[-1].replace(/.pegjs$/, '')
+      targetVar = target.split('/')[-1...][0].replace(/.js$/, '')
       mkdirp.sync targetDir
-      peg = spawn 'pegjs', ['-e', targetVar, source, target], { stdio: 'inherit' }
+      peg = spawn 'pegjs', ['--export-var', targetVar, source, target], { stdio: 'inherit' }
       peg.on "uncaughtException", (error) ->
-        console.log error
+        console.log target + ": " + error
       peg.on "close", (code) ->
+        console.log "Compiled " + source + " to " + target
         peg = spawn 'pegjs', [source, targetModule], { stdio: 'inherit' }
         peg.on "uncaughtException", (error) ->
-          console.log error
+          console.log targetModule + ": " + error
         peg.on "close", (code) ->
-          console.log "Compiled " + source
+          console.log "Compiled " + source + " to " + targetModule
           cb(target) if cb
 
 buildPegCoffee = (sources, cb) ->
@@ -83,17 +90,18 @@ buildPegCoffee = (sources, cb) ->
       target = source.replace(/src\//, 'lib/').replace(/.pegcoffee$/, '.js')
       targetModule = source.replace(/src\//, 'lib/').replace(/.pegcoffee$/, 'Module.js')
       targetDir = target.split('/')[...-1].join('/')
-      targetVar = target.split('/')[-1].replace(/.pegcoffee$/, '')
+      targetVar = target.split('/')[-1...][0].replace(/.js$/, '')
       mkdirp.sync targetDir
-      peg = spawn 'pegjs', ['-e', targetVar, '--plugin', 'pegjs-coffee-plugin', source, target], { stdio: 'inherit' }
+      peg = spawn 'pegjs', ['--export-var', targetVar, '--plugin', 'pegjs-coffee-plugin', source, target], { stdio: 'inherit' }
       peg.on "uncaughtException", (error) ->
         console.log error
       peg.on "close", (code) ->
+        console.log "Compiled " + source + " to " + target
         peg = spawn 'pegjs', ['--plugin', 'pegjs-coffee-plugin', source, targetModule], { stdio: 'inherit' }
         peg.on "uncaughtException", (error) ->
           console.log error
         peg.on "close", (code) ->
-          console.log "Compiled " + source
+          console.log "Compiled " + source + " to " + targetModule
           cb(target) if cb
 
 buildCoffee = (sources, cb) ->
@@ -109,6 +117,9 @@ buildCoffee = (sources, cb) ->
         coffee.on "close", (code) ->
           console.log "Compiled " + source
           cb(target) if cb
+
+buildJs = (source) ->
+  copyToLib(source)
 
 ###########################################
 #

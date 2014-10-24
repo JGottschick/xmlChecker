@@ -1,0 +1,25 @@
+{
+  "name": "xmlChecker",
+  "description": "Checking XML syntax of files using pegjs grammar",
+  "version": "0.0.2",
+  "dependencies": {
+    "cli": "~0.6.5",
+    "underscore": "^1.7.0"
+  },
+  "devDependencies": {
+    "coffee-script": "^1.8.0",
+    "gaze": "^0.6.4",
+    "glob": "^4.0.6",
+    "jasmine-given": "^2.6.2",
+    "jasmine-matchers": "^0.2.3",
+    "jasmine-node": "~1.14.5",
+    "mkdirp": "~0.5.0",
+    "path": "~0.4.9"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "repository": "",
+  "author": "Jan Gottschick<jan.gottschick@fokus.fraunhofer.de>",
+  "license": "BSD-4-Clause"
+}
