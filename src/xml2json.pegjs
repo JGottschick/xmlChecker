@@ -1,5 +1,5 @@
 //
-// xmlchecker.pegjs
+// xml2json.pegjs
 //
 
 //
