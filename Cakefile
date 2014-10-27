@@ -28,6 +28,10 @@ task 'build:pegjs', 'compiling pegjs files', ->
 task 'build:pegcoffee', 'compiling pegcoffee files', ->
   buildPegCoffee 'src/**/*.pegcoffee'
 
+task 'test:jasmine', 'test spec files', ->
+  sources = glob.sync 'spec/**/*Spec.+(js|coffee|litcoffee)'
+  spawn 'jasmine-node', ['--autotest', '--noStack', '--coffee'].concat(sources), {stdio: "inherit"}
+
 ###########################################
 #
 # utilities
@@ -64,11 +68,11 @@ watcher = (files, f) ->
     @on 'added', (filepath) ->
         f path.relative(process.cwd(), filepath)
 
-buildPegJs = (sources, cb) ->
+buildPegJs = (sources, dir = 'lib/', cb) ->
   for source in glob.sync(sources)
     do (source) ->
-      target = source.replace(/src\//, 'lib/').replace(/.pegjs$/, '.js')
-      targetModule = source.replace(/src\//, 'lib/').replace(/.pegjs$/, 'Module.js')
+      target = source.replace(/src\//, dir).replace(/.pegjs$/, '.js')
+      targetModule = source.replace(/src\//, dir).replace(/.pegjs$/, 'Module.js')
       targetDir = target.split('/')[...-1].join('/')
       targetVar = target.split('/')[-1...][0].replace(/.js$/, '')
       mkdirp.sync targetDir
@@ -84,11 +88,11 @@ buildPegJs = (sources, cb) ->
           console.log "Compiled " + source + " to " + targetModule
           cb(target) if cb
 
-buildPegCoffee = (sources, cb) ->
+buildPegCoffee = (sources, dir = 'lib/', cb) ->
   for source in glob.sync(sources)
     do (source) ->
-      target = source.replace(/src\//, 'lib/').replace(/.pegcoffee$/, '.js')
-      targetModule = source.replace(/src\//, 'lib/').replace(/.pegcoffee$/, 'Module.js')
+      target = source.replace(/src\//, dir).replace(/.pegcoffee$/, '.js')
+      targetModule = source.replace(/src\//, dir).replace(/.pegcoffee$/, 'Module.js')
       targetDir = target.split('/')[...-1].join('/')
       targetVar = target.split('/')[-1...][0].replace(/.js$/, '')
       mkdirp.sync targetDir
@@ -104,11 +108,11 @@ buildPegCoffee = (sources, cb) ->
           console.log "Compiled " + source + " to " + targetModule
           cb(target) if cb
 
-buildCoffee = (sources, cb) ->
+buildCoffee = (sources, dir = 'lib/', cb) ->
   for source in glob.sync(sources)
     do (source) ->
       if not source.match(/^[\w\/]+Test.\w+$/)
-        target = source.replace(/src\//, 'lib/').replace(/.litcoffee$/, '.js').replace(/.coffee$/, '.js')
+        target = source.replace(/src\//, dir).replace(/.litcoffee$/, '.js').replace(/.coffee$/, '.js')
         targetDir = target.split('/')[...-1].join('/')
         mkdirp.sync targetDir
         coffee = spawn 'coffee', ['-c', '-o', targetDir, source], { stdio: 'inherit' }
@@ -142,3 +146,4 @@ task 'watch', 'use this to watch changes an update the application', ->
   watcher 'src/**/*.+(js|map)', buildJs
 
 task 'test', 'use this to execute all tests for the application', ->
+  invoke 'test:jasmine'

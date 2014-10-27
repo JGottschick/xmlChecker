@@ -1,9 +1,9 @@
 
-## xmlChecker tests
+## xmlPrettifier tests
 
 Author: Jan Gottschick
 
-To test the xmlChecker ...
+To test the xmlPrettifier ...
 
 Importing the Jasmine test framework addons to describe the specifications by
 examples.
@@ -11,11 +11,11 @@ examples.
 		require 'jasmine-matchers'
 		require 'jasmine-given'
 
-		xmlChecker = require '../lib/xmlCheckerModule'
+		xmlPrettifier = require '../lib/xmlPrettifierModule'
 
 		compile = (__done, __expr, __test, __debug = false) ->
 			try
-				__code = xmlChecker.parse(__expr)
+				__code = xmlPrettifier.parse(__expr)
 			catch error
 				console.log error.name + " at " + error.line + "," + error.column + ": " + error.message if __debug
 				__test false, ''
@@ -28,8 +28,12 @@ And the tests...
 
 		describe 'A XML file', ->
 
-			it 'should be accept a minimal header', (done) ->
+			it 'should print a nice, minimal header in one line', (done) ->
 				compile done, '''
-					<?xml version="1.1" ?>
+					<?xml
+					version="1.1"
+					?>
 				''', (ok, result) ->
 					expect(ok).toBe true
+					expect(result).toBe '<?XML version="1.1" ?>'
+				, true
