@@ -1,13 +1,12 @@
 //
-// xmlchecker.pegjs
+// xmlPrettifier.pegjs
 //
 
 //
-// # XML Grammar
+// # XML Prettifier
 //
-// This grammar for XML validates only the syntax of a single XML file. The
-// grammar doesn't validate against a xsd schema. It can be used for online
-// syntax checking, e.g. while editing a XML file.
+// This grammar for XML validates the syntax of a single XML file and
+// prints the XML file in a pretty format.
 //
 
 /////////////////////////////////////////////////////
@@ -16,7 +15,7 @@
 //
 
 //
-// utility function to check defined namespaces supporting a stack of defined nameespaces
+// utility function to check defined namespaces supporting a stack of defined namespaces
 //
 {
 	knownNamespaces = [];
@@ -37,9 +36,9 @@
 //
 
 Start
-	= content:(prolog:Prolog ( _ Comment / _ PI )* ( _ Element )? { (prolog ? 'P' + prolog : '') })? ( _ Comment )* _
+	= content:(prolog:Prolog pi:( _ c:Comment { return c } / _ pi:PI { return pi } )* e:( _ e:Element { return e } )? { return (prolog ? prolog : '') + (pi && pi.length > 0 ? '\n' + pi.join('\n') : '') + (e ? '\n' + e : '') })? comments:( _ c:Comment  { return c })* _
 		{
-			return (content ? content + 'S\n' : '')
+			return (content ? content + '\n' : '') + (comments && comments.length > 0 ? '\n' + comments.join('\n') : '')
 		}
 
 ////////////////////////////////////////////////////
@@ -178,16 +177,17 @@ AttributeValue "attribute value"
 // Processing Instruction
 //
 PI
-	= '<?' id:Identifier __ PIContent
+	= '<?' id:Identifier __ content:PIContent
 		{
 			return (
-				id.toLowerCase() === 'xml' ? expected("that processing instruction should not 'xml'") : void 0
-		);
+				id.toLowerCase() === 'xml' ? expected("that processing instruction should not 'xml'") : '<?' + id + ' ' + content
+			);
 		}
 
 PIContent
 	= '?>'
-	/ . PIContent
+	/ __ tail:PIContent { return ' ' + tail }
+	/ head:. tail:PIContent { return head + tail }
 
 //
 // The prolog of the xml file
@@ -195,8 +195,8 @@ PIContent
 Prolog
 	= '<?xml'i
 		_ version:XmlVersion _
-		encoding:( encoding:Encoding _ { encoding } )?
-		standalone:( standalone:Standalone _ { standalone } )?
+		encoding:( encoding:Encoding _ { return encoding } )?
+		standalone:( standalone:Standalone _ { return standalone } )?
 		'?>'
 		{
 			return '<?xml ' + version + ( encoding ? ' ' + encoding : '' ) + ( standalone  ? ' ' + standalone : '' ) + ' ?>'
@@ -212,8 +212,8 @@ XmlVersion
 		}
 
 Encoding
-	= 'encoding'i _ '=' _ endcoding:STRING
-		{ return encoding }
+	= 'encoding'i _ '=' _ encoding:STRING
+		{ return 'encoding="' + encoding + '"' }
 
 Standalone
 	= 'standalone'i _ '=' _ value:STRING
@@ -221,9 +221,9 @@ Standalone
 		var _ref;
 
 		if ((_ref = value.toLowerCase()) !== "yes" && _ref !== "no") {
-		  return expected("that encoding is 'yes' or 'no'");
+		  return expected("that standalone is 'yes' or 'no'");
 		} else {
-			return 'standalone=' + value
+			return 'standalone="' + value + '"'
 		}
 	}
 
@@ -231,18 +231,18 @@ Standalone
 // CDATA section
 //
 Cdata "CDATA"
-	= '<![CDATA[' CdataContent
+	= '<![CDATA[' content:CdataContent { return '<![CDATA[' + content }
 
 CdataContent
 	= ']]>'
-	/ . CdataContent
+	/ head:. tail:CdataContent { return head + tail }
 
 //
 // XML comments
 //
 Comment "comment"
-	= '<!--' CommentContent
+	= '<!--' content:CommentContent { return '<!--' + content }
 
 CommentContent
 	= '-->'
-	/ . CommentContent
+	/ head:. tail:CommentContent { return head + tail }
