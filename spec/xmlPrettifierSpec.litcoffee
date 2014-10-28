@@ -27,7 +27,7 @@ examples.
 
 And the tests...
 
-		describe 'A XML header', ->
+		describe 'The XML header', ->
 
 			it 'should print a minimal xml header in one line', (done) ->
 				compile done, '''
@@ -77,3 +77,19 @@ And the tests...
 				''', (ok, result) ->
 					expect(ok).toBe true
 					expect(result).toBe '<?xml version="1.1" ?>\n<!--\n\tline 1\n\tline 2\n-->\n<?pi huhuhuhuh huhu ?>\n'
+
+		describe 'The XML content', ->
+
+			it 'should print a single closed tag', (done) ->
+				compile done, '''
+					<?xml version="1.1" ?><tag/>
+				''', (ok, result) ->
+					expect(ok).toBe true
+					expect(result).toBe '<?xml version="1.1" ?>\n<tag />\n'
+
+			it 'should print a single empty tag', (done) ->
+				compile done, '''
+					<?xml version="1.1" ?><Tag>       </Tag   >
+				''', (ok, result) ->
+					expect(ok).toBe true
+					expect(result).toBe '<?xml version="1.1" ?>\n<Tag >\n</Tag >\n'

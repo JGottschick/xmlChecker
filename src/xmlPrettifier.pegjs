@@ -18,17 +18,15 @@
 // utility function to check defined namespaces supporting a stack of defined namespaces
 //
 {
-	knownNamespaces = [];
+	indention = 0;
 
-	isKnownNamespace = function(ns) {
-	  var x, _i, _len;
-	  for (_i = 0, _len = knownNamespaces.length; _i < _len; _i++) {
-	    x = knownNamespaces[_i];
-	    if (x == ns) {
-	      return true;
-	    }
+	indent = function(indention) {
+	  var _i, _results;
+	  _results = [];
+	  for (x = _i = 1; _i <= indention; x = ++_i) {
+	    _results.push("  ");
 	  }
-	  return false;
+	  return _results.join('');
 	};
 }
 
@@ -38,7 +36,7 @@
 Start
 	= content:(prolog:Prolog pi:( _ c:Comment { return c } / _ pi:PI { return pi } )* e:( _ e:Element { return e } )? { return (prolog ? prolog : '') + (pi && pi.length > 0 ? '\n' + pi.join('\n') : '') + (e ? '\n' + e : '') })? comments:( _ c:Comment  { return c })* _
 		{
-			return (content ? content + '\n' : '') + (comments && comments.length > 0 ? '\n' + comments.join('\n') : '')
+			return (content ? content + '\n' : '') + (comments && comments.length > 0 ? '\n' + comments.join('\n') : '');
 		}
 
 ////////////////////////////////////////////////////
@@ -73,7 +71,7 @@ EOL
   / "\u2028" // line separator
   / "\u2029" // paragraph separator
 
-// A string must be pairwise surrounded by *"* or *'* characters. A string
+// A string must be pairwise surrounded by quote characters. A string
 // could contain any characters except the surrounding character. A string
 // must be written within a line.
 //
@@ -95,56 +93,57 @@ NameChar
 
 Identifier
 	= first:NameStartChar last:NameChar*
-		{ return first + last.join(""); }
+		{ return first + last.join("") }
 
 QualifiedIdentifier "qualified identifier"
-	= prefix:Identifier ':' id:Identifier { return { full: prefix + ":" + id, prefix:prefix, id:id }; }
-	/ id:Identifier { return { full:id, id:id }; }
+	= prefix:Identifier ':' id:Identifier { return prefix + ":" + id }
+	/ id:Identifier { return id }
 
 ////////////////////////////////////////////////////
 //
 // ## This section defines the valid tags
 //
 StartTag
-	= '<' qid:QualifiedIdentifier namespaces:Attribute* _ '>'
-		{ return { qid:qid, namespaces:namespaces }; }
+	= '<' qid:QualifiedIdentifier attributes:Attribute* _ '>'
+		{
+			return '<' + qid + (attributes && attributes.length > 0 ? ' ' + attributes.join(' ') : '') + ' >'
+		}
 
 EndTag
-	= '</' qid:QualifiedIdentifier _ '>' { return qid; }
+	= '</' qid:QualifiedIdentifier _ '>'
+		{
+			return '</' + qid + ' >'
+		}
 
 ClosedTag
-	= '<' qid:QualifiedIdentifier Attribute* _ '/>'
+	= '<' qid:QualifiedIdentifier attributes:Attribute* _ '/>'
+		{
+			return '<' + qid + (attributes && attributes.length > 0 ? ' ' + attributes.join(' ') : '') + ' />'
+		}
 
 ////////////////////////////////////////////////////
 //
 // ## This section defines an element
 //
-
-//
-// - checks if the start and end tag have the same identifier
-// - checks if the namespace prefixes are defined
-//
 Element
-	= tagInfos:StartTag
+	= _ startTag:StartTag
 		& {
-			var prefix;
-			knownNamespaces.push(tagInfos.namespaces);
-			prefix = tagInfos.qid.prefix;
-			if (prefix && !isKnownNamespace(prefix)) {
-				error("unknown namespace prefix '" + prefix + "'")
-			}
+			indention += 1;
 			return true
 		}
-		ElementContent*
+		_ contents:( content:ElementContent _ { return content })*
 		& {
-			knownNamespaces.pop();
+			indention -= 1;
 			return true
 		}
-		qid:EndTag
+		endTag:EndTag
 		{
-			return (tagInfos.qid.full !== qid.full ? expected("that start and end tag must be identical") : void 0);
+			return indent(indention - 1) + startTag + '\n' + (contents && contents.length > 0 ? contents.join('\n') + '\n' : '') + indent(indention - 1) + endTag
 		}
-	/ ClosedTag
+	/ _ tag:ClosedTag
+		{
+			return indent(indention - 1) + tag
+		}
 
 ElementContent
 	= [^<]+
@@ -157,12 +156,9 @@ ElementContent
 // ## This section defines an attribute
 //
 Attribute
-	= _ qid:QualifiedIdentifier _ '=' _ AttributeValue
+	= _ qid:QualifiedIdentifier _ '=' _ value:AttributeValue
 		{
-			if (qid.prefix === "xmlns") {
-			  return qid.id;
-			}
-			return void 0;
+			return ' ' + qid + (value ? '=' + value : '')
 		}
 
 AttributeValue "attribute value"
@@ -179,9 +175,7 @@ AttributeValue "attribute value"
 PI
 	= '<?' id:Identifier __ content:PIContent
 		{
-			return (
-				id.toLowerCase() === 'xml' ? expected("that processing instruction should not 'xml'") : '<?' + id + ' ' + content
-			);
+			return '<?' + id + ' ' + content
 		}
 
 PIContent
@@ -205,9 +199,6 @@ Prolog
 XmlVersion
 	= 'version'i _ '=' _ version:STRING
 		{
-			if (version !== "1.0" && version !== "1.1") {
-				expected("that version must be '1.0' or '1.1'");
-			}
 			return 'version="' + version + '"'
 		}
 
@@ -221,7 +212,7 @@ Standalone
 		var _ref;
 
 		if ((_ref = value.toLowerCase()) !== "yes" && _ref !== "no") {
-		  return expected("that standalone is 'yes' or 'no'");
+		  return expected("that standalone is 'yes' or 'no'")
 		} else {
 			return 'standalone="' + value + '"'
 		}
