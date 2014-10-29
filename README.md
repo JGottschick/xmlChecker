@@ -31,7 +31,8 @@ as the *xmlChecker.js* .
 * each XML attribute is a dictionary entry conating an array of values
 * attribute names are prefixed using a "@" and includes the full nampespace
 * namespaces are prefixing the name of an element or attribute and are URL-encoded enclosed by two underlines
-* the text value enries have the special name "#text"
+* the text value entries have the special name "#text"
+* the cdata value entries have the special name "#cdata"
 * comment entries have the special name "#comment"
 
 ## Getting started

@@ -3,11 +3,24 @@
 //
 
 //
-// # XML Grammar
+// # XML to JSON
 //
-// This grammar for XML validates only the syntax of a single XML file. The
-// grammar doesn't validate against a xsd schema. It can be used for online
-// syntax checking, e.g. while editing a XML file.
+// This grammar for XML parses a XML string and
+// outputs a corresponding JSON data structure.
+//
+
+
+//
+// ## JSON conventions for XML content
+//
+// * each XML element is a dictionary entry containing an array with attributes, elements, text values and comments
+// * element names are directly taken over including the full namespace
+// * namespaces are prefixing the name of an element or attribute and are URL-encoded enclosed by two underlines
+// * each XML attribute is a dictionary entry conating an array of values
+// * attribute names are prefixed using a "@" and includes the full nampespace
+// * the text value entries have the special name "#text"
+// * the cdata value entries have the special name "#cdata"
+// * comment entries have the special name "#comment"
 //
 
 /////////////////////////////////////////////////////
@@ -16,20 +29,20 @@
 //
 
 //
-// utility function to check defined namespaces supporting a stack of defined nameespaces
+// utility function to check defined namespaces supporting a stack of defined namespaces
 //
 {
-	knownNamespaces = [];
-
-	isKnownNamespace = function(ns) {
-	  var x, _i, _len;
-	  for (_i = 0, _len = knownNamespaces.length; _i < _len; _i++) {
-	    x = knownNamespaces[_i];
-	    if (x == ns) {
-	      return true;
-	    }
-	  }
-	  return false;
+	var namespaces = {};
+	removeEmpty = function(l) {
+		var x, _i, _len, _results;
+		_results = [];
+		for (_i = 0, _len = l.length; _i < _len; _i++) {
+			x = l[_i];
+			if (x) {
+				_results.push(x);
+			}
+		}
+		return _results;
 	};
 }
 
@@ -37,7 +50,10 @@
 //
 
 Start
-	= (Prolog ( _ Comment / _ PI )* ( _ Element )? )? ( _ Comment )* _
+	= content:(Prolog comments:( _ c:Comment { return c } / _ PI { return null } )* e:( _ e:Element { return e } )? { return (e ? removeEmpty(comments).concat([e]) : removeEmpty(comments)) })? comments:Comment* _
+		{
+			return (content ? content.concat(comments) : comments);
+		}
 
 ////////////////////////////////////////////////////
 //
@@ -71,7 +87,7 @@ EOL
   / "\u2028" // line separator
   / "\u2029" // paragraph separator
 
-// A string must be pairwise surrounded by *"* or *'* characters. A string
+// A string must be pairwise surrounded by quote characters. A string
 // could contain any characters except the surrounding character. A string
 // must be written within a line.
 //
@@ -93,74 +109,80 @@ NameChar
 
 Identifier
 	= first:NameStartChar last:NameChar*
-		{ return first + last.join(""); }
+		{ return first + last.join("") }
 
 QualifiedIdentifier "qualified identifier"
-	= prefix:Identifier ':' id:Identifier { return { full: prefix + ":" + id, prefix:prefix, id:id }; }
-	/ id:Identifier { return { full:id, id:id }; }
+	= prefix:Identifier ':' id:Identifier { return { prefix: prefix, id: id } }
+	/ id:Identifier { return { id: id } }
 
 ////////////////////////////////////////////////////
 //
 // ## This section defines the valid tags
 //
 StartTag
-	= '<' qid:QualifiedIdentifier namespaces:Attribute* _ '>'
-		{ return { qid:qid, namespaces:namespaces }; }
+	= '<' qid:QualifiedIdentifier attributes:Attribute* _ '>'
+		{
+			return { qid:(qid.prefix ? '__' + encodeURIComponent(namespaces[qid.prefix]) + '__' + qid.id : qid.id), attributes:attributes }
+		}
 
 EndTag
-	= '</' qid:QualifiedIdentifier _ '>' { return qid; }
+	= '</' QualifiedIdentifier _ '>'
 
 ClosedTag
-	= '<' qid:QualifiedIdentifier Attribute* _ '/>'
+	= '<' qid:QualifiedIdentifier attributes:Attribute* _ '/>'
+		{
+			return { qid:(qid.prefix ? '__' + encodeURIComponent(namespaces[qid.prefix]) + '__' + qid.id : qid.id), attributes:attributes }
+		}
 
 ////////////////////////////////////////////////////
 //
 // ## This section defines an element
 //
-
-//
-// - checks if the start and end tag have the same identifier
-// - checks if the namespace prefixes are defined
-//
 Element
-	= tagInfos:StartTag
-		& {
-			var prefix;
-			knownNamespaces.push(tagInfos.namespaces);
-			prefix = tagInfos.qid.prefix;
-			if (prefix && !isKnownNamespace(prefix)) {
-				error("unknown namespace prefix '" + prefix + "'")
-			}
-			return true
-		}
-		ElementContent*
-		& {
-			knownNamespaces.pop();
-			return true
-		}
-		qid:EndTag
+	= _ tag:StartTag
+		_ contents:( content:ElementContent _ { return content })*
+		_ EndTag
 		{
-			return (tagInfos.qid.full !== qid.full ? expected("that start and end tag must be identical") : void 0);
+			var result = {};
+			result[tag.qid] = tag.attributes.concat(contents);
+			return result
 		}
-	/ ClosedTag
+	/ _ tag:ClosedTag
+		{
+			var result = {};
+			result[tag.qid] = tag.attributes;
+			return result
+		}
 
 ElementContent
-	= [^<]+
-	/ Cdata
+	= Cdata
 	/ Comment
 	/ Element
+	/ ElementValue
+
+ElementValue
+	= chars:([^<\n\r]+)
+	{
+		return { '#text': chars.join('').trim() }
+	}
 
 ////////////////////////////////////////////////////
 //
 // ## This section defines an attribute
 //
 Attribute
-	= _ qid:QualifiedIdentifier _ '=' _ AttributeValue
+	= _ qid:QualifiedIdentifier value:( _ '=' _ value:AttributeValue { return value } )?
 		{
-			if (qid.prefix === "xmlns") {
-			  return qid.id;
+			if (qid.prefix != null && qid.prefix === 'xmlns' && value) {
+				namespaces[qid.id] = value
+				var result = {};
+				result['@' + (qid.prefix ? '__xmlns__' + qid.id : qid.id)] = value;
+				return result
+			} else {
+				var result = {};
+				result['@' + (qid.prefix ? '__' + encodeURIComponent(namespaces[qid.prefix]) + '__' + qid.id : qid.id)] = value;
+				return result
 			}
-			return void 0;
 		}
 
 AttributeValue "attribute value"
@@ -175,15 +197,11 @@ AttributeValue "attribute value"
 // Processing Instruction
 //
 PI
-	= '<?' id:Identifier __ PIContent
-		{
-			return (
-				id.toLowerCase() === 'xml' ? expected("that processing instruction should not 'xml'") : void 0
-		);
-		}
+	= '<?' Identifier __ PIContent
 
 PIContent
 	= '?>'
+	/ __ PIContent
 	/ . PIContent
 
 //
@@ -197,43 +215,36 @@ Prolog
 		'?>'
 
 XmlVersion
-	= 'version'i _ '=' _ version:STRING
-		{
-			if (version !== "1.0" && version !== "1.1") {
-				expected("that version must be '1.0' or '1.1'");
-			}
-			return void 0
-		}
+	= 'version'i _ '=' _ STRING
 
 Encoding
 	= 'encoding'i _ '=' _ STRING
 
 Standalone
-	= 'standalone'i _ '=' _ value:STRING
-	{
-		var _ref;
-
-		if ((_ref = value.toLowerCase()) !== "yes" && _ref !== "no") {
-		  return expected("that encoding is 'yes' or 'no'");
-		}
-	}
+	= 'standalone'i _ '=' _ STRING
 
 //
 // CDATA section
 //
 Cdata "CDATA"
 	= '<![CDATA[' CdataContent
+		{
+			return { '#cdata': content }
+		}
 
 CdataContent
 	= ']]>'
-	/ . CdataContent
+	/ head:. tail:CdataContent { return head + tail }
 
 //
 // XML comments
 //
 Comment "comment"
-	= '<!--' CommentContent
+	= '<!--' content:CommentContent
+		{
+			return { '#comment': content }
+		}
 
 CommentContent
-	= '-->'
-	/ . CommentContent
+	= '-->' { return '' }
+	/ head:. tail:CommentContent { return head + tail }
