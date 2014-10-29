@@ -78,7 +78,7 @@ And the tests...
 					expect(ok).toBe true
 					expect(result).toBe '<?xml version="1.1" ?>\n<!--\n\tline 1\n\tline 2\n-->\n<?pi huhuhuhuh huhu ?>\n'
 
-		describe 'The XML content', ->
+		describe 'The XML element content', ->
 
 			it 'should print a single closed tag', (done) ->
 				compile done, '''
@@ -93,3 +93,68 @@ And the tests...
 				''', (ok, result) ->
 					expect(ok).toBe true
 					expect(result).toBe '<?xml version="1.1" ?>\n<Tag >\n</Tag >\n'
+
+			it 'should print a single tag with content', (done) ->
+				compile done, '''
+					<?xml version="1.1" ?><Tag>     234  </Tag   >
+				''', (ok, result) ->
+					expect(ok).toBe true
+					expect(result).toBe '<?xml version="1.1" ?>\n<Tag >\n  234\n</Tag >\n'
+
+			it 'should print a single tag with cdata value', (done) ->
+				compile done, '''
+					<?xml version="1.1" ?><Tag>    <![CDATA[ dusfhufhu785475uirhruhf98usf hzuii <]]> </Tag   >
+				''', (ok, result) ->
+					expect(ok).toBe true
+					expect(result).toBe '<?xml version="1.1" ?>\n<Tag >\n  <![CDATA[ dusfhufhu785475uirhruhf98usf hzuii <]]>\n</Tag >\n'
+
+			it 'should print a single tag with mixed value', (done) ->
+				compile done, '''
+					<?xml version="1.1" ?><Tag>   234 abc  <![CDATA[ dusfhufhu785475uirhruhf98usf hzuii <]]> </Tag   >
+				''', (ok, result) ->
+					expect(ok).toBe true
+					expect(result).toBe '<?xml version="1.1" ?>\n<Tag >\n  234 abc\n  <![CDATA[ dusfhufhu785475uirhruhf98usf hzuii <]]>\n</Tag >\n'
+
+			it 'should print a single tag with nested tags', (done) ->
+				compile done, '''
+					<?xml version="1.1" ?><Tag1>    <tag2> abc
+					</tag2> </Tag1   >
+				''', (ok, result) ->
+					expect(ok).toBe true
+					expect(result).toBe '<?xml version="1.1" ?>\n<Tag1 >\n  <tag2 >\n    abc\n  </tag2 >\n</Tag1 >\n'
+
+		describe 'The XML attribute', ->
+
+			it 'should print an attribute with empty content', (done) ->
+				compile done, '''
+					<?xml version="1.1" ?><Tag a/>
+				''', (ok, result) ->
+					expect(ok).toBe true
+					expect(result).toBe '<?xml version="1.1" ?>\n<Tag a />\n'
+
+			it 'should print an attribute with content', (done) ->
+				compile done, '''
+					<?xml version="1.1" ?><Tag a="2  d"/>
+				''', (ok, result) ->
+					expect(ok).toBe true
+					expect(result).toBe '<?xml version="1.1" ?>\n<Tag a="2  d" />\n'
+
+			it 'should print multiple attributes', (done) ->
+				compile done, '''
+					<?xml version="1.1" ?><Tag a1="2"
+
+					a2="  d"/>
+				''', (ok, result) ->
+					expect(ok).toBe true
+					expect(result).toBe '<?xml version="1.1" ?>\n<Tag a1="2" a2="  d" />\n'
+
+		describe 'The XML comments', ->
+
+			it 'should print embedded comments', (done) ->
+				compile done, '''
+					<?xml version="1.1" ?><Tag><!-- I am
+					an embedded
+					    comment --></Tag>
+				''', (ok, result) ->
+					expect(ok).toBe true
+					expect(result).toBe '<?xml version="1.1" ?>\n<Tag >\n  <!-- I am\n  an embedded\n      comment -->\n</Tag >\n'

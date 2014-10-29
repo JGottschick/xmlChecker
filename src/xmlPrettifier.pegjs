@@ -18,9 +18,17 @@
 // utility function to check defined namespaces supporting a stack of defined namespaces
 //
 {
-	indention = 0;
+	var indention = 0;
 
-	indent = function(indention) {
+	indentInc = function() {
+		indention += 1
+	}
+
+	indentDec = function() {
+		indention -= 1
+	}
+
+	indent = function() {
 	  var _i, _results;
 	  _results = [];
 	  for (x = _i = 1; _i <= indention; x = ++_i) {
@@ -79,6 +87,10 @@ STRING "string"
 	= '"' string:[^"\n\r]* '"' { return string.join(""); }
 	/ "'" string:[^'\n\r]* "'" { return string.join(""); }
 
+QUOTEDSTRING "string"
+	= '"' string:[^"\n\r]* '"' { return '"' + string.join("") + '"'; }
+	/ "'" string:[^'\n\r]* "'" { return "'" + string.join("") + "'"; }
+
 ////////////////////////////////////////////////////
 //
 // ## This section defines the valid identifier names
@@ -128,41 +140,44 @@ ClosedTag
 Element
 	= _ startTag:StartTag
 		& {
-			indention += 1;
+			indentInc();
 			return true
 		}
 		_ contents:( content:ElementContent _ { return content })*
 		& {
-			indention -= 1;
+			indentDec();
 			return true
 		}
-		endTag:EndTag
+		_ endTag:EndTag
 		{
-			return indent(indention - 1) + startTag + '\n' + (contents && contents.length > 0 ? contents.join('\n') + '\n' : '') + indent(indention - 1) + endTag
+			return indent() + startTag + '\n' + (contents && contents.length > 0 ? contents.join('\n') + '\n' : '') + indent() + endTag
 		}
 	/ _ tag:ClosedTag
 		{
-			return indent(indention - 1) + tag
+			return indent() + tag
 		}
 
 ElementContent
-	= [^<]+
-	/ Cdata
+	= Cdata
 	/ Comment
 	/ Element
+	/ ElementValue
+
+ElementValue
+	= chars:([^<\n\r]+) { return indent() + chars.join('').trim() }
 
 ////////////////////////////////////////////////////
 //
 // ## This section defines an attribute
 //
 Attribute
-	= _ qid:QualifiedIdentifier _ '=' _ value:AttributeValue
+	= _ qid:QualifiedIdentifier value:( _ '=' _ value:AttributeValue { return value } )?
 		{
-			return ' ' + qid + (value ? '=' + value : '')
+			return qid + (value ? '=' + value : '')
 		}
 
 AttributeValue "attribute value"
-	= STRING
+	= QUOTEDSTRING
 
 ////////////////////////////////////////////////////
 //
@@ -222,7 +237,7 @@ Standalone
 // CDATA section
 //
 Cdata "CDATA"
-	= '<![CDATA[' content:CdataContent { return '<![CDATA[' + content }
+	= '<![CDATA[' content:CdataContent { return indent() + '<![CDATA[' + content }
 
 CdataContent
 	= ']]>'
@@ -232,7 +247,7 @@ CdataContent
 // XML comments
 //
 Comment "comment"
-	= '<!--' content:CommentContent { return '<!--' + content }
+	= '<!--' content:CommentContent { return indent() + '<!--' + content.split('\n').join('\n' + indent()) }
 
 CommentContent
 	= '-->'

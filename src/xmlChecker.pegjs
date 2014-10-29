@@ -111,7 +111,8 @@ EndTag
 	= '</' qid:QualifiedIdentifier _ '>' { return qid; }
 
 ClosedTag
-	= '<' qid:QualifiedIdentifier Attribute* _ '/>'
+	= '<' qid:QualifiedIdentifier namespaces:Attribute* _ '/>'
+		{ return { qid:qid, namespaces:namespaces }; }
 
 ////////////////////////////////////////////////////
 //
@@ -123,7 +124,7 @@ ClosedTag
 // - checks if the namespace prefixes are defined
 //
 Element
-	= tagInfos:StartTag
+	= _ tagInfos:StartTag
 		& {
 			var prefix;
 			knownNamespaces.push(tagInfos.namespaces);
@@ -133,29 +134,43 @@ Element
 			}
 			return true
 		}
-		ElementContent*
+		_ ( ElementContent _ )*
 		& {
 			knownNamespaces.pop();
 			return true
 		}
-		qid:EndTag
+		_ qid:EndTag
 		{
 			return (tagInfos.qid.full !== qid.full ? expected("that start and end tag must be identical") : void 0);
 		}
-	/ ClosedTag
+	/ _ tagInfos:ClosedTag
+		{
+			var prefix;
+			knownNamespaces.push(tagInfos.namespaces);
+			prefix = tagInfos.qid.prefix;
+			if (prefix && !isKnownNamespace(prefix)) {
+				knownNamespaces.pop();
+				error("that all namespace prefixes are defined '" + prefix + "'");
+			}
+			knownNamespaces.pop();
+			return void 0
+		}
 
 ElementContent
-	= [^<]+
-	/ Cdata
+	= Cdata
 	/ Comment
 	/ Element
+	/ ElementValue
+
+ElementValue
+	= [^<\n\r]+
 
 ////////////////////////////////////////////////////
 //
 // ## This section defines an attribute
 //
 Attribute
-	= _ qid:QualifiedIdentifier _ '=' _ AttributeValue
+	= _ qid:QualifiedIdentifier ( _ '=' _ AttributeValue )?
 		{
 			if (qid.prefix === "xmlns") {
 			  return qid.id;
