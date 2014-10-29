@@ -3,14 +3,15 @@ xmlChecker
 
 Validating the syntax of a xml text
 
-*xmlChecker.js* is [_PEG.js_](http://pegjs.majda.cz/) grammar to validate a string against the XML syntax.
+*xmlChecker.js* (and xmlCheckerModule.js) is [_PEG.js_](http://pegjs.majda.cz/) grammar to validate a string against the XML syntax.
 *xmlChecker.js* doesn't validate the string against a XSD schema.
 *xmlChecker.js* can used to check a file on the fly, e.g. while editing the file in a web browser
 at development time.
 
-*xmlPrettify.js* converts a string in the XML format to a prettified version of the string in XML.
+*xmlPrettifier.js* (and xmlPrettifierModule.js) converts a string in the XML format to a prettified version of the string in XML.
 
-*xml2json.js* converts a string in the xml format to a json data structure using the same grammar
+Work in Progress:
+*xml2json.js* (and xml2jsonModule.js) converts a string in the xml format to a json data structure using the same grammar
 as the *xmlChecker.js* .
 
 ## Features
@@ -20,6 +21,7 @@ as the *xmlChecker.js* .
 * check if namespace prefixes are declared
 * easy integrateable in JavaScript code on client (*xmlChecker.js* for web browser) and server side (*xmlCheckerModule.js* for *node.js*)
 * easy extendable
+* pretty print xml code
 * converting xml strings to JSON data structures
 
 ## JSON conventions for XML content
@@ -28,7 +30,7 @@ as the *xmlChecker.js* .
 * element names are directly taken over including the full namespace
 * each XML attribute is a dictionary entry conating an array of values
 * attribute names are prefixed using a "@" and includes the full nampespace
-* namespaces are prefixing the name of an element or attribute and are URL-encoded enclosed by "__"
+* namespaces are prefixing the name of an element or attribute and are URL-encoded enclosed by two underlines
 * the text value enries have the special name "#text"
 * comment entries have the special name "#comment"
 
@@ -49,6 +51,8 @@ and use it
 		xmlChecker.parse(source)
 	catch error
 		alert("XML Parser: " + error.name + " at " + error.line + "," + error.column + ": " + error.message);
+
+For examples see the code in *examples*.
 
 ## Installation
 
