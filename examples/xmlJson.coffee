@@ -1,9 +1,9 @@
-xml2json = require '../lib/xml2jsonModule'
+xmlChecker = require 'xmlChecker'
 
 parse = (code) ->
   result = ''
   try
-    result = xml2json.parse(code)
+    result = xmlChecker.json(code)
   catch error
     console.log error.name + " at " + error.line + "," + error.column + ": " + error.message
   return result

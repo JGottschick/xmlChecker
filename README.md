@@ -10,7 +10,6 @@ at development time.
 
 *xmlPrettifier.js* (and xmlPrettifierModule.js) converts a string in the XML format to a prettified version of the string in XML.
 
-Work in Progress:
 *xml2json.js* (and xml2jsonModule.js) converts a string in the xml format to a json data structure using the same grammar
 as the *xmlChecker.js* .
 
@@ -19,7 +18,7 @@ as the *xmlChecker.js* .
 * check the basic syntax according to the specification at [_w3c_](http://www.w3.org/TR/xml
 * check if start and end tag matches
 * check if namespace prefixes are declared
-* easy integrateable in JavaScript code on client (*xmlChecker.js* for web browser) and server side (*xmlCheckerModule.js* for *node.js*)
+* easy integrateable in JavaScript code on client (*xmlChecker.js* for web browser) and server side (*xmlCheckerModule.js* for *node.js* or use mpn install xmlChecker)
 * easy extendable
 * pretty print xml code
 * converting xml strings to JSON data structures
@@ -41,21 +40,20 @@ Just include the *xmlChecker.js* in your client code
 
 	<script src="/js/xmlChecker.js"/>
 
-or import the module in node.js
+or import the module in node.js using *npm install xmlChecker*
 
-	var xmlChecker;
-	xmlChecker = require('../lib/xmlCheckerModule.js');
+	var xmlChecker = require('xmlChecker');
 
 and use it
 
 	try
-		xmlChecker.parse(source)
+		xmlChecker.check(source)
 	catch error
 		alert("XML Parser: " + error.name + " at " + error.line + "," + error.column + ": " + error.message);
 
-For examples see the code in *examples*.
+For more examples see the code in *examples*.
 
-## Installation
+## Development
 
 Just to use the library copy the file _xmlChecker.js_ to your preferred location.
 

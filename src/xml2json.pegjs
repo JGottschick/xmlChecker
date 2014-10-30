@@ -35,6 +35,7 @@
 	var namespaces = {};
 	var savedNamespaces = {};
 	var scopes = [];
+	
 	function clone(obj) {
 		if(obj == null || typeof(obj) != 'object')
 			return obj;

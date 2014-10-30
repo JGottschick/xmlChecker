@@ -1,9 +1,9 @@
-xmlPrettifier = require '../lib/xmlPrettifierModule'
+xmlChecker = require 'xmlChecker'
 
 parse = (code) ->
   result = ''
   try
-    result = xmlPrettifier.parse(code)
+    result = xmlChecker.prettify(code)
   catch error
     console.log error.name + " at " + error.line + "," + error.column + ": " + error.message
   return result

@@ -1,13 +1,13 @@
-xmlChecker = require '../lib/xmlCheckerModule'
+xmlChecker = require 'xmlChecker'
 
 parse = (code) ->
   try
-    xmlChecker.parse(code)
+    xmlChecker.check(code)
   catch error
     return error.name + " at " + error.line + "," + error.column + ": " + error.message
   return ''
 
-result1 = parse('''<?xml version="1.1" ?><Tag>234</Tag>''')
+result1 = parse('''<?xml version="1.1" ?><Tag   >234</Tag  >''')
 if result1.length == 0
   console.log "first example is fine"
 else

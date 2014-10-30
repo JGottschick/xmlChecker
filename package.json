@@ -1,11 +1,21 @@
 {
   "name": "xmlChecker",
-  "description": "Checking XML syntax of files using pegjs grammar",
-  "version": "0.0.2",
-  "dependencies": {
-    "cli": "~0.6.5",
-    "underscore": "^1.7.0"
+  "description": "Checking XML syntax of files using pegjs grammar, pretty print XML files and concert XML into JSON",
+  "homepage": "https://github.com/JGottschick/xmlChecker",
+  "keywords": ["xml","validation","json","parser","prettifier"],
+  "version": "0.1.0",
+  "author": "Jan Gottschick / Fraunhofer FOKUS",
+  "license": "BSD-4-Clause",
+
+  "repository" : {
+      "type" : "git",
+      "url" : "https://github.com/JGottschick/xmlChecker.git"
   },
+  "bugs" : {
+      "url" : "https://github.com/JGottschick/xmlChecker/issues"
+  },
+
+  "dependencies": {},
   "devDependencies": {
     "coffee-script": "^1.8.0",
     "gaze": "^0.6.4",
@@ -19,7 +29,10 @@
   "engines": {
     "node": ">=0.10.0"
   },
-  "repository": "",
-  "author": "Jan Gottschick<jan.gottschick@fokus.fraunhofer.de>",
-  "license": "BSD-4-Clause"
+
+  "files":[
+    "lib/",
+    "index.js",
+    "LICENSE"
+  ]
 }
