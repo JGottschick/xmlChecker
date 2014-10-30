@@ -36,9 +36,17 @@ as the *xmlChecker.js* .
 
 ## Getting started
 
-Just include the *xmlChecker.js* in your client code
+In a browser just include the files *lib/xmlChecker.js*, *lib/xmlPrettifier.js* and *lib/xml2json.js* in your client code
 
-	<script src="/js/xmlChecker.js"/>
+	<script src=".../lib/xmlChecker.js"/>
+
+or use *bower install xmlChecker* and access the function with
+
+	var result = xmlChecker.parse(source)
+	var doc = xmlPrettifier.parse(source)
+	var json = xml2json.parse(source)
+
+in your client code
 
 or import the module in node.js using *npm install xmlChecker*
 
@@ -63,4 +71,4 @@ To modify the grammar you need to install _PEG.js_ by
 
 and compile it, e.g. using
 
-	./pegjs.sh
+	pegjs -e xmlChecker xmlChecker.pegjs
