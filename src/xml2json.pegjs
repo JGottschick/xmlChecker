@@ -33,7 +33,18 @@
 //
 {
 	var namespaces = {};
-	removeEmpty = function(l) {
+	var savedNamespaces = {};
+	var scopes = [];
+	function clone(obj) {
+		if(obj == null || typeof(obj) != 'object')
+			return obj;
+		var temp = new obj.constructor();
+		for(var key in obj)
+			temp[key] = clone(obj[key]);
+		return temp;
+	}
+
+	function removeEmpty(l) {
 		var x, _i, _len, _results;
 		_results = [];
 		for (_i = 0, _len = l.length; _i < _len; _i++) {
@@ -120,18 +131,40 @@ QualifiedIdentifier "qualified identifier"
 // ## This section defines the valid tags
 //
 StartTag
-	= '<' qid:QualifiedIdentifier attributes:Attribute* _ '>'
+	= '<' qid:QualifiedIdentifier
+		& {
+			savedNamespaces = clone(namespaces);
+			return true
+		}
+		attributes:Attribute* _ '>'
+		& {
+			scopes.push(savedNamespaces);
+			return true
+		}
 		{
-			return { qid:(qid.prefix ? '__' + encodeURIComponent(namespaces[qid.prefix]) + '__' + qid.id : qid.id), attributes:attributes }
+			return { qid:(qid.prefix ? '__' + encodeURIComponent(namespaces[qid.prefix]).replace(/__/g, '%5F%5F') + '__' + qid.id : qid.id), attributes:attributes }
 		}
 
 EndTag
 	= '</' QualifiedIdentifier _ '>'
+		& {
+			namespaces = scopes.pop();
+			return true
+		}
 
 ClosedTag
-	= '<' qid:QualifiedIdentifier attributes:Attribute* _ '/>'
+	= '<' qid:QualifiedIdentifier
+		& {
+				savedNamespaces = clone(namespaces);
+				return true
+			}
+		attributes:Attribute* _ '/>'
+		& {
+				namespaces = savedNamespaces;
+				return true
+			}
 		{
-			return { qid:(qid.prefix ? '__' + encodeURIComponent(namespaces[qid.prefix]) + '__' + qid.id : qid.id), attributes:attributes }
+			return { qid:(qid.prefix ? '__' + encodeURIComponent(namespaces[qid.prefix]).replace(/__/g, '%5F%5F') + '__' + qid.id : qid.id), attributes:attributes }
 		}
 
 ////////////////////////////////////////////////////
@@ -180,7 +213,7 @@ Attribute
 				return result
 			} else {
 				var result = {};
-				result['@' + (qid.prefix ? '__' + encodeURIComponent(namespaces[qid.prefix]) + '__' + qid.id : qid.id)] = value;
+				result['@' + (qid.prefix ? '__' + encodeURIComponent(namespaces[qid.prefix]).replace(/__/g, '%5F%5F') + '__' + qid.id : qid.id)] = value;
 				return result
 			}
 		}

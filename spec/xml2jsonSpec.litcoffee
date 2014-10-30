@@ -96,12 +96,26 @@ And the tests...
           expect(ok).toBe true
           expect(JSON.stringify(result)).toBe JSON.stringify([{tag:[{'@a':"1"},{"@__xmlns__url":"http://www.domain.de"},{"__http%3A%2F%2Fwww.domain.de__tag":[]}]}])
 
+      it 'should be used in a namespace of a tag including the markers', (done) ->
+        compile done, '''
+          <?xml version="1.1" ?><tag a="1" xmlns:url="http://www.domain__.de"><url:tag/></tag>
+        ''', (ok, result) ->
+          expect(ok).toBe true
+          expect(JSON.stringify(result)).toBe JSON.stringify([{tag:[{'@a':"1"},{"@__xmlns__url":"http://www.domain__.de"},{"__http%3A%2F%2Fwww.domain%5F%5F.de__tag":[]}]}])
+
       it 'should be used in a namespace of an attribute', (done) ->
         compile done, '''
           <?xml version="1.1" ?><tag a="1" xmlns:url="http://www.domain.de"><tag1 url:a1/></tag>
         ''', (ok, result) ->
           expect(ok).toBe true
           expect(JSON.stringify(result)).toBe JSON.stringify([{tag:[{'@a':"1"},{"@__xmlns__url":"http://www.domain.de"},{"tag1":[{"@__http%3A%2F%2Fwww.domain.de__a1":null}]}]}])
+
+      it 'should use the right scopes', (done) ->
+        compile done, '''
+          <?xml version="1.1" ?><tag1 xmlns:url="http://www.domain1.de"><tag2 a="1" xmlns:url="http://www.domain2.de"><tag3 url:a1 xmlns:url2="http://www.domain3.de" url2:a2/></tag2><tag3 url:a1/></tag1>
+        ''', (ok, result) ->
+          expect(ok).toBe true
+          expect(JSON.stringify(result)).toBe JSON.stringify([{"tag1":[{"@__xmlns__url":"http://www.domain1.de"},{"tag2":[{"@a":"1"},{"@__xmlns__url":"http://www.domain2.de"},{"tag3":[{"@__http%3A%2F%2Fwww.domain2.de__a1":null},{"@__xmlns__url2":"http://www.domain3.de"},{"@__http%3A%2F%2Fwww.domain3.de__a2":null}]}]},{"tag3":[{"@__http%3A%2F%2Fwww.domain1.de__a1":null}]}]}])
 
     describe 'The XML comments', ->
 

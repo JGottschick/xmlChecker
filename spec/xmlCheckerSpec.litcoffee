@@ -150,7 +150,6 @@ And the tests...
 					</tag1>
 				''', (ok, result) ->
 					expect(ok).toBe true
-				,true
 
 			it 'should accept nested namespaces', (done) ->
 				compile done, '''
@@ -162,7 +161,18 @@ And the tests...
 					</tag1>
 				''', (ok, result) ->
 					expect(ok).toBe true
-				,true
+
+			it 'should reject namespaces in wrong scope', (done) ->
+				compile done, '''
+					<?xml version="1.1" ?>
+					<tag1 xmlns:ns1="huh">
+						<ns1:tag2 xmlns:ns2="buh">
+							<ns2:tag3 xmlns:ns3="hui"></ns2:tag3>
+							<ns3:tag4/>
+						</ns1:tag2>
+					</tag1>
+				''', (ok, result) ->
+					expect(ok).toBe false
 
 			it 'should reject unknown namespaces', (done) ->
 				compile done, '''
