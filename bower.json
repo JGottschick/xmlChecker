@@ -1,0 +1,36 @@
+{
+  "name": "xmlchecker",
+  "main": ["lib/xml2json.js", "lib/xmlChecker.js", "lib/xmlPrettifier.js"],
+  "version": "0.1.0",
+  "homepage": "https://github.com/JGottschick/xmlChecker",
+  "authors": [
+    "Jan Gottschick <jan.gottschick@fokus.fraunhofer.de>"
+  ],
+  "description": "Checking XML syntax of files using pegjs grammar, pretty print XML files and convert XML into JSON",
+  "keywords": [
+    "xml","validation","json","parser","prettifier"
+  ],
+  "license": "BSD-4-Clause",
+
+  "repository": {
+      "type": "git",
+      "url": "https://github.com/JGottschick/xmlChecker.git"
+  },
+
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "examples/",
+    "lib/*Module.js",
+    "spec/",
+    "src",
+    "Cakefile",
+    "index.js",
+    "LICENSE",
+    "package.json",
+    "README.md"
+  ],
+
+  "dependencies":[]
+}
