@@ -1,5 +1,5 @@
 {
-  "name": "xmlChecker",
+  "name": "xmlchecker",
   "description": "Checking XML syntax of files using pegjs grammar, pretty print XML files and concert XML into JSON",
   "homepage": "https://github.com/JGottschick/xmlChecker",
   "keywords": ["xml","validation","json","parser","prettifier"],
